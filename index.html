@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Reuse Map</title>
+
+    <!-- Bootstrap -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+    <!-- Barlow Font -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- MapLibre -->
+    <script src="https://unpkg.com/maplibre-gl@5.4.0/dist/maplibre-gl.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/maplibre-gl@5.4.0/dist/maplibre-gl.css"
+    />
+    <!-- Supercluster -->
+    <script src="https://unpkg.com/supercluster@7.1.5/dist/supercluster.min.js"></script>
+    <!-- PapaParse -->
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <!-- Font Awesome for Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+    />
+  </head>
+  <body>
+    <button
+      id="sidebar-toggle"
+      class="btn btn-sm btn-outline-primary"
+      aria-label="Toggle filters panel"
+    >
+      ☰ Filters
+    </button>
+    <div id="container">
+      <div id="sidebar">
+        <div
+          class="filters-header d-flex justify-content-between align-items-center"
+        >
+          <h5 class="mb-0">
+            Filters <span id="location-count" class="filter-count">0</span>
+          </h5>
+          <button
+            id="reset-filters"
+            class="btn btn-sm btn-outline-secondary"
+            aria-label="Reset all filters"
+          >
+            Reset
+          </button>
+        </div>
+        <div class="p-3">
+          <div class="filter-section">
+            <div class="filter-header">
+              <label for="groupFilter" class="form-label mb-0">
+                <i class="fas fa-store" aria-hidden="true"></i> Reuse
+                Establishment Type
+              </label>
+              <span
+                class="info-icon"
+                data-bs-toggle="tooltip"
+                data-bs-placement="right"
+                title="Select the type of establishment you're looking for"
+                aria-label="Information about establishment types"
+              >
+                <i class="fas fa-info-circle" aria-hidden="true"></i>
+              </span>
+            </div>
+            <select id="groupFilter" class="form-select">
+              <option value="All">All</option>
+              <option value="Cafe">Cafe</option>
+              <option value="Store">Store</option>
+              <option value="Repair">Repair</option>
+              <option value="Rental">Rental</option>
+              <option value="RefillStore">Refill Store</option>
+            </select>
+          </div>
+
+          <div class="filter-section mt-3">
+            <div class="filter-row">
+              <div class="filter-label-container">
+                <label for="countryFilter" class="form-label mb-0">
+                  <i class="fas fa-globe-asia" aria-hidden="true"></i> Country
+                </label>
+                <span
+                  class="info-icon"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="right"
+                  title="Filter locations by country"
+                  aria-label="Information about country filter"
+                >
+                  <i class="fas fa-info-circle" aria-hidden="true"></i>
+                </span>
+              </div>
+              <select id="countryFilter" class="form-select">
+                <option value="All">All</option>
+                <!-- Countries will be added here dynamically -->
+              </select>
+            </div>
+          </div>
+
+          <div class="filter-section mt-3">
+            <div class="filter-row">
+              <div class="filter-label-container">
+                <label for="topicFilter" class="form-label mb-0">
+                  <i class="fas fa-tags" aria-hidden="true"></i> Topic
+                </label>
+                <span
+                  class="info-icon"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="right"
+                  title="Filter by eco-friendly topics"
+                  aria-label="Information about topic filter"
+                >
+                  <i class="fas fa-info-circle" aria-hidden="true"></i>
+                </span>
+              </div>
+              <select id="topicFilter" class="form-select">
+                <option value="All">All</option>
+                <option value="Zero Waste">Zero Waste</option>
+                <option value="Reuse">Reuse</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="service-features-section">
+            <div class="filter-header">
+              <div class="features-title">
+                <i class="fas fa-filter" aria-hidden="true"></i> Service
+                Features
+              </div>
+              <span
+                class="info-icon"
+                data-bs-toggle="tooltip"
+                data-bs-placement="right"
+                title="Click on features to filter establishments that offer these services"
+                aria-label="Information about service features filter"
+              >
+                <i class="fas fa-info-circle" aria-hidden="true"></i>
+              </span>
+            </div>
+            <div
+              class="feature-toggle-container"
+              role="group"
+              aria-label="Service feature filters"
+            >
+              <button
+                class="feature-toggle"
+                id="filterByoContainer"
+                data-feature="dir_byo_container_available"
+                data-bs-toggle="tooltip"
+                data-bs-placement="top"
+                title="Bring your own reusable container allowed"
+                aria-pressed="false"
+                role="switch"
+              >
+                <i class="fas fa-jar" aria-hidden="true"></i>
+                <span>BYO Container</span>
+              </button>
+              <button
+                class="feature-toggle"
+                id="filterDiscounted"
+                data-feature="dir_discounted_with_container"
+                data-bs-toggle="tooltip"
+                data-bs-placement="top"
+                title="Discount when buyer brings their own container"
+                aria-pressed="false"
+                role="switch"
+              >
+                <i class="fas fa-tag" aria-hidden="true"></i>
+                <span>Discounted</span>
+              </button>
+              <button
+                class="feature-toggle"
+                id="filterBulkBuying"
+                data-feature="dir_bulk_buying_payment_by_weight"
+                data-bs-toggle="tooltip"
+                data-bs-placement="top"
+                title="Bulk buying, paid by weight available"
+                aria-pressed="false"
+                role="switch"
+              >
+                <i class="fas fa-weight-scale" aria-hidden="true"></i>
+                <span>Bulk Buying</span>
+              </button>
+              <button
+                class="feature-toggle"
+                id="filterReturnableContainers"
+                data-feature="reusable_containers_can_be_returned"
+                data-bs-toggle="tooltip"
+                data-bs-placement="top"
+                title="Reusable containers can be returned"
+                aria-pressed="false"
+                role="switch"
+              >
+                <i class="fas fa-recycle" aria-hidden="true"></i>
+                <span>Returnable</span>
+              </button>
+              <button
+                class="feature-toggle"
+                id="filterPlasticFree"
+                data-feature="plastic_free_products_available"
+                data-bs-toggle="tooltip"
+                data-bs-placement="top"
+                title="Plastic-free products available"
+                aria-pressed="false"
+                role="switch"
+              >
+                <i class="fas fa-leaf" aria-hidden="true"></i>
+                <span>Plastic-Free</span>
+              </button>
+              <button
+                class="feature-toggle"
+                id="filterVegan"
+                data-feature="vegan_products_available"
+                data-bs-toggle="tooltip"
+                data-bs-placement="top"
+                title="Vegan products available"
+                aria-pressed="false"
+                role="switch"
+              >
+                <i class="fas fa-seedling" aria-hidden="true"></i>
+                <span>Vegan</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="map"></div>
+    </div>
+
+    <div id="loading-indicator">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <div class="mt-2">Loading map data...</div>
+    </div>
+
+    <div id="error-message" role="alert"></div>
+
+    <!-- Bootstrap JS bundle (includes Popper.js for tooltips) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      // Initialize tooltips when DOM is loaded
+      document.addEventListener("DOMContentLoaded", function () {
+        initializeTooltips();
+      });
+
+      // Function to initialize tooltips - can be called anytime
+      function initializeTooltips() {
+        const tooltipTriggerList = [].slice.call(
+          document.querySelectorAll('[data-bs-toggle="tooltip"]')
+        );
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+          return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+      }
+
+      // Toggle sidebar in mobile view
+      document
+        .getElementById("sidebar-toggle")
+        .addEventListener("click", () => {
+          document.getElementById("sidebar").classList.toggle("active");
+        });
+
+      // Cache for SVG icons to prevent duplicate fetches
+      const svgCache = {};
+
+      // Define map icons and colors
+      const groupIcons = {
+        Cafe: "/icons/cafe_inlined.svg",
+        Store: "/icons/store_inlined.svg",
+        Repair: "/icons/repair_inlined.svg",
+        Rental: "/icons/rental_inlined.svg",
+        RefillStore: "/icons/refill_inlined.svg", // Note: Using proper name with space
+        Default: "/icons/default_inlined.svg",
+      };
+
+      const topicColors = {
+        "Zero Waste": "#28a745",
+        Reuse: "#FFC107",
+        Default: "#6c757d",
+      };
+
+      // Service feature definitions with icons
+      const serviceFeatures = {
+        dir_byo_container_available: {
+          name: "BYO Container",
+          icon: "fa-jar",
+          description: "Bring your own reusable container allowed",
+        },
+        dir_discounted_with_container: {
+          name: "Discounted",
+          icon: "fa-tag",
+          description: "Discount when buyer brings their own container",
+        },
+        dir_bulk_buying_payment_by_weight: {
+          name: "Bulk Buying",
+          icon: "fa-weight-scale",
+          description: "Bulk buying, paid by weight available",
+        },
+        reusable_containers_can_be_returned: {
+          name: "Returnable",
+          icon: "fa-recycle",
+          description: "Reusable containers can be returned",
+        },
+        plastic_free_products_available: {
+          name: "Plastic-Free",
+          icon: "fa-leaf",
+          description: "Plastic-free products available",
+        },
+        vegan_products_available: {
+          name: "Vegan",
+          icon: "fa-seedling",
+          description: "Vegan products available",
+        },
+      };
+
+      // Array to store all markers with their metadata
+      const allMarkers = [];
+
+      // Countries data for centering the map when a country is selected
+      const countryCoordinates = {
+        Philippines: [122.5, 12.8],
+        Thailand: [100.9925, 15.870032],
+        Malaysia: [101.975766, 4.210484],
+        Indonesia: [113.921327, -0.789275],
+        Vietnam: [108.277199, 14.058324],
+        Cambodia: [104.990963, 12.565679],
+        Japan: [138.252924, 36.204824],
+        China: [104.195397, 35.86166],
+        Taiwan: [120.9605, 23.6978],
+        "South Korea": [127.766922, 35.907757],
+        India: [78.9629, 20.5937],
+        Bangladesh: [90.356331, 23.684994],
+        "Sri Lanka": [80.771797, 7.873054],
+        Nepal: [84.124008, 28.394857],
+        Australia: [133.775136, -25.274398],
+        "New Zealand": [174.885971, -40.900557],
+        Maldives: [73.2207, 3.2028],
+        Lebanon: [35.8623, 33.8547],
+      };
+
+      // Initialize the map
+      const map = new maplibregl.Map({
+        container: "map",
+        style: {
+          version: 8,
+          sources: {
+            "carto-positron": {
+              type: "raster",
+              tiles: [
+                "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+                "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+                "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+                "https://d.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+              ],
+              tileSize: 256,
+              attribution:
+                '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            },
+          },
+          layers: [
+            {
+              id: "carto-positron",
+              type: "raster",
+              source: "carto-positron",
+              minzoom: 0,
+              maxzoom: 20,
+            },
+          ],
+        },
+        center: [113, 15], // Center on Asia region
+        zoom: 3,
+      });
+
+      // Function to create service feature pills HTML based on row data
+      function createServiceFeaturePills(row) {
+        // First check if there are any active features
+        const activeFeatures = Object.keys(serviceFeatures).filter(
+          (key) => row[key] === true
+        );
+
+        // If no active features, return empty string
+        if (activeFeatures.length === 0) {
+          return "";
+        }
+
+        let html = '<div class="service-features-section">';
+        html += '<div class="features-title">Available Services:</div>';
+        html += '<div class="service-features-container">';
+
+        // Only add pills for features that are true
+        activeFeatures.forEach((key) => {
+          const feature = serviceFeatures[key];
+          html += `<span class="service-feature" title="${feature.description}">
+                  <i class="fas ${feature.icon}" aria-hidden="true"></i> ${feature.name}
+                </span>`;
+        });
+
+        html += "</div></div>";
+        return html;
+      }
+
+      // Error handling function
+      function showError(message, duration = 5000) {
+        const errorEl = document.getElementById("error-message");
+        errorEl.textContent = message;
+        errorEl.style.display = "block";
+
+        setTimeout(() => {
+          errorEl.style.display = "none";
+        }, duration);
+      }
+
+      // Function to fetch SVG with caching and error handling
+      async function fetchSvgIcon(url) {
+        if (svgCache[url]) {
+          return svgCache[url];
+        }
+
+        try {
+          const response = await fetch(url);
+          if (!response.ok) {
+            throw new Error(`Failed to load icon: ${response.statusText}`);
+          }
+          const svgText = await response.text();
+          svgCache[url] = svgText;
+          return svgText;
+        } catch (error) {
+          console.error(`Error loading SVG from ${url}:`, error);
+          // Return a simple fallback SVG
+          return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40"/></svg>';
+        }
+      }
+
+      map.on("load", async () => {
+        try {
+          const response = await fetch(
+            "https://docs.google.com/spreadsheets/d/e/2PACX-1vR7LZGl65gNRE_9K_LLNhRVdDpp2xBqsXDfNnBdGnmGMUhpadwyee_XASYs0si9XdgCLfi7JaknV1bw/pub?output=csv"
+          );
+
+          if (!response.ok) {
+            throw new Error(`Failed to fetch data: ${response.statusText}`);
+          }
+
+          const csvText = await response.text();
+
+          Papa.parse(csvText, {
+            header: true,
+            skipEmptyLines: true,
+            dynamicTyping: true,
+            complete: async function (results) {
+              if (results.errors && results.errors.length > 0) {
+                console.warn("CSV parsing had errors:", results.errors);
+              }
+
+              const rows = results.data;
+              const countryFilter = document.getElementById("countryFilter");
+              const countrySet = new Set();
+              const markersToAdd = [];
+
+              // Populate country dropdown
+              const asianCountries = [
+                "Philippines",
+                "Thailand",
+                "Malaysia",
+                "Indonesia",
+                "Vietnam",
+                "Cambodia",
+                "Japan",
+                "China",
+                "Taiwan",
+                "South Korea",
+                "India",
+                "Bangladesh",
+                "Sri Lanka",
+                "Nepal",
+                "Maldives",
+                "Lebanon",
+              ];
+              const otherCountries = ["Australia", "New Zealand"];
+
+              const addCountryGroup = (label, countries) => {
+                const group = document.createElement("optgroup");
+                group.label = label;
+                countries.forEach((country) => {
+                  const option = document.createElement("option");
+                  option.value = country;
+                  option.textContent = country;
+                  group.appendChild(option);
+                });
+                countryFilter.appendChild(group);
+              };
+
+              addCountryGroup("Asia", asianCountries);
+              addCountryGroup("Oceania", otherCountries);
+
+              // Process each row with async SVG fetching
+              const markerPromises = rows.map(async (row) => {
+                if (!row.latitude || !row.longitude) return;
+
+                const lat = parseFloat(row.latitude);
+                const lng = parseFloat(row.longitude);
+                if (isNaN(lat) || isNaN(lng)) return;
+
+                const group = row.group?.trim() || "Default";
+                const topic = row.topic?.trim() || "Default";
+                const iconKey =
+                  group === "Refill Store" ? "RefillStore" : group;
+                const svgPath = groupIcons[iconKey] || groupIcons["Default"];
+                // const fillColor = topicColors[topic] || topicColors["Default"];
+
+                const svgContent = await fetchSvgIcon(svgPath);
+
+                const el = document.createElement("div");
+                el.className = "custom-marker";
+                el.innerHTML = svgContent;
+
+                const svgEl = el.querySelector("svg");
+                if (svgEl) {
+                  // svgEl.setAttribute("fill", fillColor);
+                  svgEl.setAttribute("width", "28");
+                  svgEl.setAttribute("height", "28");
+                }
+
+                const popupHtml = `
+            <div class="p-3">
+              <h5 class="fw-bold mb-1">${row.entry_title || "No Title"}</h5>
+              <p class="text-muted small mb-2" style="text-decoration: underline; line-height: 1.2;">${
+                row.address || ""
+              }</p>
+              <div class="mb-2">
+                <span class="popup-pill">${
+                  group === "RefillStore" ? "Refill Store" : group
+                }</span>
+                <span class="popup-pill">${topic}</span>
+              </div>
+              <p class="mb-2">${row.description?.substring(0, 125) || ""}${
+                  row.description?.length > 125 ? "..." : ""
+                }</p>
+              ${createServiceFeaturePills(row)}
+      ${
+        row.link
+          ? `<a class="btn btn-sm btn-outline-secondary w-100 mt-2" href="${row.link}" target="_blank" rel="noopener">Visit Website</a>`
+          : ""
+      }
+    </div>
+          `;
+
+                const marker = new maplibregl.Marker({ element: el })
+                  .setLngLat([lng, lat])
+                  .setPopup(
+                    new maplibregl.Popup({ offset: 25 }).setHTML(popupHtml)
+                  );
+
+                const markerData = {
+                  marker,
+                  group,
+                  topic,
+                  country: row.country?.trim() || "Unknown",
+                  latitude: lat,
+                  longitude: lng,
+                };
+
+                Object.keys(serviceFeatures).forEach((key) => {
+                  markerData[key] = row[key] === true;
+                });
+
+                allMarkers.push(markerData);
+                markersToAdd.push(marker);
+              });
+
+              // Wait for all SVG icons to load and markers to be prepared
+              await Promise.all(markerPromises);
+
+              // Add all markers to the map
+              markersToAdd.forEach((marker) => marker.addTo(map));
+
+              updateLocationCount(allMarkers.length);
+              document.getElementById("loading-indicator").style.display =
+                "none";
+              setupFilterListeners();
+            },
+            error: function (error) {
+              console.error("Error parsing CSV:", error);
+              showError("Failed to load map data. Please try again later.");
+              document.getElementById("loading-indicator").style.display =
+                "none";
+            },
+          });
+        } catch (error) {
+          console.error("Error fetching data:", error);
+          showError("Failed to load map data. Please try again later.");
+          document.getElementById("loading-indicator").style.display = "none";
+        }
+      });
+      // Initialize filter event listeners
+      function setupFilterListeners() {
+        // Group filter
+        document
+          .getElementById("groupFilter")
+          .addEventListener("change", applyFilters);
+
+        // Country filter
+        document
+          .getElementById("countryFilter")
+          .addEventListener("change", function (e) {
+            const selectedCountry = e.target.value;
+            // If a country is selected, zoom to its coordinates
+            if (
+              selectedCountry !== "All" &&
+              countryCoordinates[selectedCountry]
+            ) {
+              map.flyTo({
+                center: countryCoordinates[selectedCountry],
+                zoom: 5,
+                essential: true,
+              });
+            }
+            applyFilters();
+          });
+
+        // Topic filter
+        document
+          .getElementById("topicFilter")
+          .addEventListener("change", applyFilters);
+
+        // Service feature toggles
+        document.querySelectorAll(".feature-toggle").forEach((button) => {
+          button.addEventListener("click", function () {
+            this.classList.toggle("active");
+            this.setAttribute(
+              "aria-pressed",
+              this.classList.contains("active")
+            );
+            applyFilters();
+          });
+        });
+
+        // Reset button
+        document
+          .getElementById("reset-filters")
+          .addEventListener("click", resetFilters);
+      }
+
+      // Function to apply all filters
+      function applyFilters() {
+        const groupFilter = document.getElementById("groupFilter").value;
+        const countryFilter = document.getElementById("countryFilter").value;
+        const topicFilter = document.getElementById("topicFilter").value;
+
+        // Get all active feature toggles
+        const activeFeatures = Array.from(
+          document.querySelectorAll(".feature-toggle.active")
+        ).map((el) => el.dataset.feature);
+
+        // Apply filters to all markers
+        allMarkers.forEach((markerData) => {
+          let visible = true;
+
+          // Apply group filter
+          if (groupFilter !== "All" && markerData.group !== groupFilter) {
+            visible = false;
+          }
+
+          // Apply country filter
+          if (countryFilter !== "All" && markerData.country !== countryFilter) {
+            visible = false;
+          }
+
+          // Apply topic filter
+          if (topicFilter !== "All" && markerData.topic !== topicFilter) {
+            visible = false;
+          }
+
+          // Apply feature filters (all selected features must be present)
+          if (activeFeatures.length > 0) {
+            // Check if ALL selected features are available for this marker
+            if (!activeFeatures.every((feature) => markerData[feature])) {
+              visible = false;
+            }
+          }
+
+          // Show or hide marker based on filter result
+          if (visible) {
+            markerData.marker.addTo(map);
+          } else {
+            markerData.marker.remove();
+          }
+        });
+
+        // Update visible locations count
+        const visibleMarkers = allMarkers.filter(
+          (m) => m.marker.getElement().parentNode !== null
+        );
+        updateLocationCount(visibleMarkers.length);
+      }
+
+      // Function to reset all filters
+      function resetFilters() {
+        // Reset dropdowns
+        document.getElementById("groupFilter").value = "All";
+        document.getElementById("countryFilter").value = "All";
+        document.getElementById("topicFilter").value = "All";
+
+        // Reset feature toggles
+        document
+          .querySelectorAll(".feature-toggle.active")
+          .forEach((button) => {
+            button.classList.remove("active");
+            button.setAttribute("aria-pressed", "false");
+          });
+
+        // Reset map view
+        map.flyTo({
+          center: [113, 15],
+          zoom: 3,
+          essential: true,
+        });
+
+        // Show all markers
+        allMarkers.forEach((markerData) => {
+          markerData.marker.addTo(map);
+        });
+
+        // Update count
+        updateLocationCount(allMarkers.length);
+      }
+
+      // Function to update the location count display
+      function updateLocationCount(count) {
+        document.getElementById("location-count").textContent = count;
+      }
+    </script>
+  </body>
+</html>
